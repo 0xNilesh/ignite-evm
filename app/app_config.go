@@ -53,6 +53,12 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	erc20types "github.com/evmos/os/x/erc20/types"
+	_ "github.com/evmos/os/x/evm/core/tracers/js"
+	_ "github.com/evmos/os/x/evm/core/tracers/native"
+	evmtypes "github.com/evmos/os/x/evm/types"
+	feemarkettypes "github.com/evmos/os/x/feemarket/types"
+
 	igniteevmmodulev1 "igniteevm/api/igniteevm/igniteevm/module"
 	_ "igniteevm/x/igniteevm/module" // import for side-effects
 	igniteevmmoduletypes "igniteevm/x/igniteevm/types"
@@ -76,6 +82,10 @@ var (
 		slashingtypes.ModuleName,
 		govtypes.ModuleName,
 		minttypes.ModuleName,
+		// evm modules
+		evmtypes.ModuleName,
+		feemarkettypes.ModuleName,
+		erc20types.ModuleName,
 		crisistypes.ModuleName,
 		ibcexported.ModuleName,
 		genutiltypes.ModuleName,
@@ -105,6 +115,10 @@ var (
 	beginBlockers = []string{
 		// cosmos sdk modules
 		minttypes.ModuleName,
+		// evm modules
+		erc20types.ModuleName,
+		feemarkettypes.ModuleName,
+		evmtypes.ModuleName,
 		distrtypes.ModuleName,
 		slashingtypes.ModuleName,
 		evidencetypes.ModuleName,
@@ -130,6 +144,10 @@ var (
 		feegrant.ModuleName,
 		group.ModuleName,
 		genutiltypes.ModuleName,
+		// evm modules
+		evmtypes.ModuleName,
+		erc20types.ModuleName,
+		feemarkettypes.ModuleName,
 		// ibc modules
 		ibcexported.ModuleName,
 		ibctransfertypes.ModuleName,
@@ -158,6 +176,9 @@ var (
 		{Account: ibctransfertypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
 		{Account: ibcfeetypes.ModuleName},
 		{Account: icatypes.ModuleName},
+		{Account: evmtypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
+		{Account: feemarkettypes.ModuleName},
+		{Account: erc20types.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
 		// this line is used by starport scaffolding # stargate/app/maccPerms
 	}
 

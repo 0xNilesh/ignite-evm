@@ -72,8 +72,15 @@ import (
 	icahostkeeper "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper"
 	_ "github.com/cosmos/ibc-go/v8/modules/apps/29-fee" // import for side-effects
 	ibcfeekeeper "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/keeper"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
+	ibctransferkeeper "github.com/evmos/os/x/ibc/transfer/keeper"
+
+	evmostypes "github.com/evmos/os/types"
+	erc20keeper "github.com/evmos/os/x/erc20/keeper"
+	_ "github.com/evmos/os/x/evm/core/tracers/js"
+	_ "github.com/evmos/os/x/evm/core/tracers/native"
+	evmkeeper "github.com/evmos/os/x/evm/keeper"
+	feemarketkeeper "github.com/evmos/os/x/feemarket/keeper"
 
 	igniteevmmodulekeeper "igniteevm/x/igniteevm/keeper"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
@@ -138,6 +145,13 @@ type App struct {
 	ICAHostKeeper       icahostkeeper.Keeper
 	TransferKeeper      ibctransferkeeper.Keeper
 
+	// RatelimitKeeper ratelimitkeeper.Keeper
+
+	// EVM
+	FeeMarketKeeper feemarketkeeper.Keeper
+	EVMKeeper       *evmkeeper.Keeper
+	Erc20Keeper     erc20keeper.Keeper
+
 	// Scoped IBC
 	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
 	ScopedIBCTransferKeeper   capabilitykeeper.ScopedKeeper
@@ -156,6 +170,7 @@ func init() {
 	var err error
 	clienthelpers.EnvPrefix = Name
 	DefaultNodeHome, err = clienthelpers.GetNodeHomeDirectory("." + Name)
+	sdk.DefaultPowerReduction = evmostypes.MicroPowerReduction
 	if err != nil {
 		panic(err)
 	}
@@ -264,6 +279,11 @@ func New(
 
 	// register legacy modules
 	if err := app.registerIBCModules(appOpts); err != nil {
+		return nil, err
+	}
+
+	// register evm modules
+	if err := app.registerEVMModules(appOpts); err != nil {
 		return nil, err
 	}
 

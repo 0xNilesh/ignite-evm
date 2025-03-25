@@ -24,8 +24,6 @@ import (
 	ibcfee "github.com/cosmos/ibc-go/v8/modules/apps/29-fee"
 	ibcfeekeeper "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/keeper"
 	ibcfeetypes "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/types"
-	ibctransfer "github.com/cosmos/ibc-go/v8/modules/apps/transfer"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	ibc "github.com/cosmos/ibc-go/v8/modules/core"
 	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
@@ -35,6 +33,8 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 	solomachine "github.com/cosmos/ibc-go/v8/modules/light-clients/06-solomachine"
 	ibctm "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
+	ibctransfer "github.com/evmos/os/x/ibc/transfer"
+	ibctransferkeeper "github.com/evmos/os/x/ibc/transfer/keeper"
 	// this line is used by starport scaffolding # ibc/app/import
 )
 
@@ -105,12 +105,13 @@ func (app *App) registerIBCModules(appOpts servertypes.AppOptions) error {
 		app.appCodec,
 		app.GetKey(ibctransfertypes.StoreKey),
 		app.GetSubspace(ibctransfertypes.ModuleName),
-		app.IBCFeeKeeper,
+		app.IBCFeeKeeper, // ICS4Wrapper
 		app.IBCKeeper.ChannelKeeper,
 		app.IBCKeeper.PortKeeper,
 		app.AccountKeeper,
 		app.BankKeeper,
 		scopedIBCTransferKeeper,
+		app.Erc20Keeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 

@@ -15,10 +15,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
-	authtxconfig "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	evmoskeyring "github.com/evmos/os/crypto/keyring"
+	evmosencoding "github.com/evmos/os/encoding"
 
 	"igniteevm/app"
 )
@@ -78,16 +80,24 @@ func NewRootCmd() *cobra.Command {
 		},
 	}
 
+	encodingConfig := evmosencoding.MakeConfig()
+
 	// Since the IBC modules don't support dependency injection, we need to
 	// manually register the modules on the client side.
 	// This needs to be removed after IBC supports App Wiring.
-	ibcModules := app.RegisterIBC(clientCtx.InterfaceRegistry)
+	ibcModules := app.RegisterIBC(encodingConfig.InterfaceRegistry)
 	for name, mod := range ibcModules {
 		moduleBasicManager[name] = module.CoreAppModuleBasicAdaptor(name, mod)
 		autoCliOpts.Modules[name] = mod
 	}
 
-	initRootCmd(rootCmd, clientCtx.TxConfig, moduleBasicManager)
+	evmModules := app.RegisterEVM(encodingConfig.InterfaceRegistry)
+	for name, mod := range evmModules {
+		moduleBasicManager[name] = module.CoreAppModuleBasicAdaptor(name, mod)
+		autoCliOpts.Modules[name] = mod
+	}
+
+	initRootCmd(rootCmd, encodingConfig.TxConfig, moduleBasicManager)
 
 	overwriteFlagDefaults(rootCmd, map[string]string{
 		flags.FlagChainID:        strings.ReplaceAll(app.Name, "-", ""),
@@ -123,25 +133,16 @@ func ProvideClientContext(
 	txConfigOpts tx.ConfigOptions,
 	legacyAmino *codec.LegacyAmino,
 ) client.Context {
+	encodingConfig := evmosencoding.MakeConfig()
 	clientCtx := client.Context{}.
-		WithCodec(appCodec).
-		WithInterfaceRegistry(interfaceRegistry).
-		WithLegacyAmino(legacyAmino).
+		WithCodec(encodingConfig.Codec).
+		WithInterfaceRegistry(encodingConfig.InterfaceRegistry).
+		WithLegacyAmino(encodingConfig.Amino).
 		WithInput(os.Stdin).
 		WithAccountRetriever(types.AccountRetriever{}).
 		WithHomeDir(app.DefaultNodeHome).
+		WithKeyringOptions(evmoskeyring.Option()).
 		WithViper(app.Name) // env variable prefix
-
-	// Read the config again to overwrite the default values with the values from the config file
-	clientCtx, _ = config.ReadFromClientConfig(clientCtx)
-
-	// textual is enabled by default, we need to re-create the tx config grpc instead of bank keeper.
-	txConfigOpts.TextualCoinMetadataQueryFn = authtxconfig.NewGRPCCoinMetadataQueryFn(clientCtx)
-	txConfig, err := tx.NewTxConfigWithOptions(clientCtx.Codec, txConfigOpts)
-	if err != nil {
-		panic(err)
-	}
-	clientCtx = clientCtx.WithTxConfig(txConfig)
 
 	return clientCtx
 }
