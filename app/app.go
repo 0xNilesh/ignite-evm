@@ -192,6 +192,7 @@ func getGovProposalHandlers() []govclient.ProposalHandler {
 // AppConfig returns the default app config.
 func AppConfig() depinject.Config {
 	return depinject.Configs(
+		depinject.Provide(ProvideCustomGetSigners),
 		appConfig,
 		// Alternatively, load the app config from a YAML file.
 		// appconfig.LoadYAML(AppConfigYAML),
